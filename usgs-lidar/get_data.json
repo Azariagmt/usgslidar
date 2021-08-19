@@ -1,0 +1,37 @@
+{
+  "pipeline": [
+    {
+      "bounds": "",
+      "filename": "",
+      "type": "readers.ept",
+      "tag": "readdata"
+    },
+    {
+      "limits": "Classification![2:7], Classification![9:9]",
+      "type": "filters.range",
+      "tag": "nonoise"
+    },
+    {
+      "in_srs": "EPSG:3857",
+      "out_srs": "EPSG:26915",
+      "type": "filters.reprojection",
+      "tag": "reprojection"
+    },
+    {
+      "filename": "",
+      "inputs": ["reprojection"],
+      "tag": "writerslas",
+      "type": "writers.las"
+    },
+    {
+      "filename": "",
+      "gdalopts": "tiled=yes,     compress=deflate",
+      "inputs": ["writerslas"],
+      "nodata": -9999,
+      "output_type": "idw",
+      "resolution": 1,
+      "type": "writers.gdal",
+      "window_size": 6
+    }
+  ]
+}
