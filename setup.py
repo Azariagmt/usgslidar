@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import distutils.command.bdist_conda
 
 classifiers = [
     'Development Status :: 5 - Production/Stable',
@@ -9,8 +10,9 @@ classifiers = [
 ]
 
 setup(
-    name='usgs-lidar',
-    version='0.0.1',
+    name='usgslidar',
+    version='0.0.14',
+    distclass=distutils.command.bdist_conda.CondaDistribution,
     description='A basic package to fetch usgs agriculture data',
     long_description_content_type='text/markdown',
     long_description=open('README.md').read() + '\n\n' +
@@ -22,5 +24,5 @@ setup(
     classifiers=classifiers,
     keywords='usgs',
     packages=find_packages(),
-    install_requires=['']
+    install_requires=['fiona','gdal','pdal','geopandas', 'pyproj']
 )
