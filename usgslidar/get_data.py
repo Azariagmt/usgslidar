@@ -76,7 +76,7 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
         PIPELINE_PATH (string) -- path to new PDAL pipeline
 
     Returns:
-        nothing yet
+        Arrays from the PDAL pipeline
     """
     try:
         input_polygon = Polygon(polygon)
@@ -132,9 +132,8 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
 
     try:
         print("PIPE EXEC return")
-        print(pipe_exec)
-        print(pipeline.arrays)
         pipeline_arrays =  pipeline.arrays
+        print(pipeline_arrays)
         logger.info("Pipeline arrays successfully returned.")
         return pipeline_arrays
     except RuntimeError as e:
@@ -156,9 +155,19 @@ def get_elevetion(array_data, crs_epgs=4326):
             df = df.set_geometry("geometry")
             df.set_crs(epsg=crs_epgs, inplace=True)
         print(df)
+        df.to_file("../data/elevation.geojson", driver='GeoJSON')
         return df
 
     return None
+
+def get_geopandas_dataframe():
+    """
+    
+    """
+    pipeline_arrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
+    elevation_df = get_elevetion(pipeline_arrays)
+    return elevation_df
+
 
 if __name__ == "__main__":
     parrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
