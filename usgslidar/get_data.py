@@ -3,7 +3,7 @@ import json
 import geopandas as gpd
 from pyproj import Transformer
 from logs import log
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 
 
 logger = log(path="../logs/", file="get_data.logs")
@@ -11,7 +11,7 @@ logger.info("Starts Get data script")
 
 PUBLIC_DATA_PATH = "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/"
 
-REGION = "USGS_LPC_CO_SoPlatteRiver_Lot5_2013_LAS_2015/"
+REGION = "IA_FullState/"
 
 MINX, MINY, MAXX, MAXY = [-93.756155, 41.918015, -93.747334, 41.921429]
 BOUNDS = f"({[MINX,MAXX]},{[MINY,MAXY]})"
@@ -66,7 +66,7 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
                        OUTPUT_FILENAME_LAZ: str = OUTPUT_FILENAME_LAZ, OUTPUT_FILENAME_TIF: str = OUTPUT_FILENAME_TIF,
                        PIPELINE_PATH: str = PIPELINE_PATH
                        ) -> None:
-    """[Initializes the PDAL pipeline and gets bound for entire region]
+    """Initializes the PDAL pipeline and gets bound for entire region
 
     Arguments: 
         Polygon (list of x,y coordinate tuples) -- sets boundary
@@ -76,7 +76,7 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
         PIPELINE_PATH (string) -- path to new PDAL pipeline
 
     Returns:
-        nothing yet
+        Arrays from the PDAL pipeline
     """
     try:
         input_polygon = Polygon(polygon)
@@ -98,12 +98,16 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
     try:
         with open(PIPELINE_PATH) as json_file:
             the_json = json.load(json_file)
+ 
 
         the_json['pipeline'][0]['bounds'] = bounds
         the_json['pipeline'][0]['filename'] = PUBLIC_ACCESS_PATH
 
         the_json['pipeline'][1]['polygon'] = polygon_input
 
+        # TODO replace 4326 with out_srs
+        # the_json['pipeline'][4]['out_srs'] = "EPSG:4326" 
+        
         the_json['pipeline'][4]['filename'] = OUTPUT_FILENAME_LAZ
         # the_json['pipeline'][6]['filename'] = OUTPUT_FILENAME_TIF
 
@@ -113,18 +117,58 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
     except RuntimeError as e:
         logger.exception("failed to initiate pipeline")
     try:
-
         pipe_exec = pipeline.execute()
+        print(pipe_exec)
         # TODO all the comments
         # list df numpy arrays...x, y and z bounds
         # laz file contains a lot of info
         # interested in elevation point
         # z is the elevation
         metadata = pipeline.metadata
+        print(metadata)
         logger.info("Pipeline executed and metadata generated successfully")
     except RuntimeError as e:
         logger.exception("Failed to generate metadata and execute pipeline")
 
+    try:
+        print("PIPE EXEC return")
+        pipeline_arrays =  pipeline.arrays
+        print(pipeline_arrays)
+        logger.info("Pipeline arrays successfully returned.")
+        return pipeline_arrays
+    except RuntimeError as e:
+        logger.exception("Failed to retrieve pipeline arrays")
+
+
+
+def get_elevetion(array_data, crs_epgs=4326): 
+    """Returns the elevation of each point in the point_cloud data
+    
+    """  
+    if array_data:
+        for i in array_data:
+            geometry_points = [Point(x, y) for x, y in zip(i["X"], i["Y"])]
+            elevetions = i["Z"]
+            df = gpd.GeoDataFrame(columns=["elevation", "geometry"])
+            df['elevation'] = elevetions
+            df['geometry'] = geometry_points
+            df = df.set_geometry("geometry")
+            df.set_crs(epsg=crs_epgs, inplace=True)
+        print(df)
+        df.to_file("../data/elevation.geojson", driver='GeoJSON')
+        return df
+
+    return None
+
+def get_geopandas_dataframe():
+    """
+    
+    """
+    pipeline_arrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
+    elevation_df = get_elevetion(pipeline_arrays)
+    return elevation_df
+
 
 if __name__ == "__main__":
-    get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
+    parrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
+    get_elevetion(parrays)
