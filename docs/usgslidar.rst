@@ -4,14 +4,6 @@ usgslidar package
 Submodules
 ----------
 
-usgslidar.fetch\_data module
-----------------------------
-
-.. automodule:: usgslidar.fetch_data
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 usgslidar.get\_data module
 --------------------------
 
@@ -24,6 +16,14 @@ usgslidar.logs module
 ---------------------
 
 .. automodule:: usgslidar.logs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+usgslidar.visualize module
+--------------------------
+
+.. automodule:: usgslidar.visualize
    :members:
    :undoc-members:
    :show-inheritance:
