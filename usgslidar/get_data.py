@@ -2,12 +2,18 @@ import pdal
 import json
 import geopandas as gpd
 from pyproj import Transformer
-from logs import log
+from .logs import log
 from shapely.geometry import Polygon, Point
+import os
 
+if (not os.path.isdir('./logs')):
+    os.mkdir("./logs")
 
-logger = log(path="../logs/", file="get_data.logs")
-logger.info("Starts Get data script")
+logs_path = "./logs/get_data.logs"
+if not os.path.exists(logs_path):
+    with open(logs_path, "w"):
+        logger = log(path="./logs/", file="get_data.logs")
+        logger.info("Starts Get data script")
 
 PUBLIC_DATA_PATH = "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/"
 
@@ -161,7 +167,8 @@ def get_elevetion(array_data, crs_epgs=4326):
     return None
 
 def get_geopandas_dataframe():
-    """
+    """Returns the Geopandas Dataframe
+
     
     """
     pipeline_arrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
