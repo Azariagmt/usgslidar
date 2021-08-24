@@ -12,8 +12,12 @@ if (not os.path.isdir('./logs')):
 logs_path = "./logs/get_data.logs"
 if not os.path.exists(logs_path):
     with open(logs_path, "w"):
+        global logger
         logger = log(path="./logs/", file="get_data.logs")
         logger.info("Starts Get data script")
+else:
+    logger = log(path="./logs/", file="get_data.logs")
+    logger.info("Starts Get data script")
 
 PUBLIC_DATA_PATH = "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/"
 
@@ -29,10 +33,11 @@ PUBLIC_ACCESS_PATH = PUBLIC_DATA_PATH+REGION+"ept.json"
 OUTPUT_FILENAME_LAZ = "../data/laz/SoPlatteRiver.las"
 OUTPUT_FILENAME_TIF = "../data/tif/SoPlatteRiver.tif"
 
-PIPELINE_PATH = "get_data.json"
 
+here = os.path.dirname(os.path.abspath(__file__))
+PIPELINE_PATH = os.path.join(here, "get_data.json")
 
-def get_polygon_boundaries(polygon: Polygon, input_epsg : int = 3857, output_epsg :int = 4326):
+def get_polygon_boundaries(polygon: Polygon, input_epsg: int = 3857, output_epsg: int = 4326):
     """Gets the required polygon boundaries
 
     Arguments:
@@ -42,11 +47,11 @@ def get_polygon_boundaries(polygon: Polygon, input_epsg : int = 3857, output_eps
                       default -- 3857
         Output epsg -- The output CRS reference system
                       default -- 26915
-    
+
     Returns: A tuple of lists containing rectangular boundary
             ([minx, maxx],[miny,maxy]) &
             the initial user polygon input
-    
+
     """
     polygon_df = gpd.GeoDataFrame([polygon], columns=['geometry'])
 
@@ -62,7 +67,7 @@ def get_polygon_boundaries(polygon: Polygon, input_epsg : int = 3857, output_eps
         polygon_input += f'{x} {y}, '
     polygon_input = polygon_input[:-2]
     polygon_input += '))'
-    
+
     print(polygon_input)
 
     return f"({[minx, maxx]},{[miny,maxy]})", polygon_input
@@ -77,7 +82,7 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
     Arguments: 
         Polygon (list of x,y coordinate tuples) -- sets boundary
         region (string) -- region
-    
+
     Optional Arguments:
         PIPELINE_PATH (string) -- path to new PDAL pipeline
 
@@ -87,24 +92,23 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
     try:
         input_polygon = Polygon(polygon)
         MINX, MINY, MAXX, MAXY = [-93.756155, 41.918015, -93.747334, 41.921429]
-        input_polygon = Polygon(((MINX, MINY), (MINX, MAXY), (MAXX, MAXY), (MAXX, MINY), (MINX, MINY)))
+        input_polygon = Polygon(
+            ((MINX, MINY), (MINX, MAXY), (MAXX, MAXY), (MAXX, MINY), (MINX, MINY)))
         logger.info("Polygon input success!")
     except RuntimeError as e:
         logger.exception("Polygon input error")
-        
+
     try:
         bounds, polygon_input = get_polygon_boundaries(input_polygon)
         logger.info("Rectangular input extracted successfully")
     except RuntimeError as e:
         logger.exception("Polygon extraction error")
 
-
     # TODO convert CRS to 3857
 
     try:
         with open(PIPELINE_PATH) as json_file:
             the_json = json.load(json_file)
- 
 
         the_json['pipeline'][0]['bounds'] = bounds
         the_json['pipeline'][0]['filename'] = PUBLIC_ACCESS_PATH
@@ -112,8 +116,8 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
         the_json['pipeline'][1]['polygon'] = polygon_input
 
         # TODO replace 4326 with out_srs
-        # the_json['pipeline'][4]['out_srs'] = "EPSG:4326" 
-        
+        # the_json['pipeline'][4]['out_srs'] = "EPSG:4326"
+
         the_json['pipeline'][4]['filename'] = OUTPUT_FILENAME_LAZ
         # the_json['pipeline'][6]['filename'] = OUTPUT_FILENAME_TIF
 
@@ -138,7 +142,7 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
 
     try:
         print("PIPE EXEC return")
-        pipeline_arrays =  pipeline.arrays
+        pipeline_arrays = pipeline.arrays
         print(pipeline_arrays)
         logger.info("Pipeline arrays successfully returned.")
         return pipeline_arrays
@@ -146,11 +150,10 @@ def get_raster_terrain(polygon: list, region: str, PUBLIC_ACCESS_PATH: str = PUB
         logger.exception("Failed to retrieve pipeline arrays")
 
 
-
-def get_elevetion(array_data, crs_epgs=4326): 
+def get_elevetion(array_data, crs_epgs=4326):
     """Returns the elevation of each point in the point_cloud data
-    
-    """  
+
+    """
     if array_data:
         for i in array_data:
             geometry_points = [Point(x, y) for x, y in zip(i["X"], i["Y"])]
@@ -166,16 +169,19 @@ def get_elevetion(array_data, crs_epgs=4326):
 
     return None
 
+
 def get_geopandas_dataframe():
     """Returns the Geopandas Dataframe
 
-    
+
     """
-    pipeline_arrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
+    pipeline_arrays = get_raster_terrain(polygon=[
+                                         (-93.756155, 41.918015), (-93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015)], region="IA_FullState")
     elevation_df = get_elevetion(pipeline_arrays)
     return elevation_df
 
 
 if __name__ == "__main__":
-    parrays = get_raster_terrain(polygon=[(-93.756155, 41.918015),( -93.747334, 41.921429), (-93.756155, 41.918015), (-93.756155, 41.918015) ], region="IA_FullState")
+    parrays = get_raster_terrain(polygon=[(-93.756155, 41.918015), (-93.747334, 41.921429),
+                                 (-93.756155, 41.918015), (-93.756155, 41.918015)], region="IA_FullState")
     get_elevetion(parrays)
