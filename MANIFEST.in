@@ -1,1 +1,2 @@
-global-include *.txt *.md *.py
+global-include *.txt *.md *.py 
+include usgslidar/get_data.json

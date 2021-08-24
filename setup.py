@@ -10,7 +10,7 @@ classifiers = [
 
 setup(
     name='usgslidar',
-    version='0.0.17',
+    version='0.0.25',
     description='A basic package to fetch USGs\'s LIDAR agriculture data',
     long_description_content_type='text/markdown',
     long_description=open('README.md').read() + '\n\n' +
@@ -20,7 +20,9 @@ setup(
     author_email='azariagebremichael10@gmail.com',
     license='MIT',
     classifiers=classifiers,
-    keywords=['usgs','lidar'],
+    keywords=['usgs', 'lidar'],
     packages=find_packages(),
-    install_requires=['fiona','gdal','pdal','geopandas', 'pyproj']
+    include_package_data=True,
+    install_requires=['fiona', 'gdal', 'pdal',
+                      'geopandas', 'pyproj', 'laspy', 'matplotlib']
 )
