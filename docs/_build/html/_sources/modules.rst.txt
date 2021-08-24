@@ -1,9 +1,7 @@
-lidar-project
-=============
+usgslidar
+=========
 
 .. toctree::
    :maxdepth: 4
 
-   main
-   setup
    usgslidar
